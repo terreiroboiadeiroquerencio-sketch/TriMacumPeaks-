@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TriPeaks de Aruanda - Paciência Mística</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+        body {
+            background-color: #0b131f;
+            color: #f3f4f6;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            touch-action: manipulation;
+        }
+
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+            background: #111827;
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 2px solid #d4af37;
+            width: 100%;
+            max-width: 400px;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .header-logo {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid #d4af37;
+            object-fit: cover;
+        }
+        h1 { color: #d4af37; margin: 0; font-size: 0.85rem; text-transform: uppercase; }
+        p.subtitle { color: #10b981; font-size: 0.62rem; margin: 2px 0 0 0; font-weight: bold; }
+
+        .btn-audio {
+            background: #1f2937;
+            border: 1px solid #d4af37;
+            color: #d4af37;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .game-panel {
+            background: #111827;
+            border: 2px solid #d4af37;
+            border-radius: 12px;
+            padding: 12px;
+            max-width: 400px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.7);
+            position: relative;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 8px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #d4af37;
+            background: #1f2937;
+            padding: 6px 10px;
+            border-radius: 6px;
+        }
+
+        .mentor-dialogue {
+            background: #1f2937;
+            border: 1px dashed #10b981;
+            color: #10b981;
+            padding: 6px 10px;
+            border-radius: 6px;
+            width: 100%;
+            font-size: 0.72rem;
+            text-align: center;
+            margin-bottom: 8px;
+            min-height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 376px;
+            height: 420px;
+        }
+
+        canvas {
+            border: 2px solid #374151;
+            background: #0f4c3a;
+            border-radius: 6px;
+            display: block;
+        }
+
+        .overlay-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(11, 19, 31, 0.96);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            text-align: center;
+            padding: 20px;
+            border-radius: 12px;
+        }
+        .hidden { display: none !important; }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin: 6px 0 12px 0;
+            background: #1f2937;
+            border: 1px solid #d4af37;
+            color: #fff;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        .btn-action {
+            background: #10b981;
+            color: #0b131f;
+            border: none;
+            padding: 12px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            width: 100%;
+            margin-top: 10px;
+            text-transform: uppercase;
+        }
+        .btn-action:active { transform: scale(0.96); }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <div class="header-left">
+            <img src="https://i.ibb.co/60wpJ3xG/Logo-terreiro.jpg" class="header-logo" alt="Logo">
+            <div>
+                <h1>TriPeaks de Aruanda</h1>
+                <p class="subtitle">Paciência dos Três Picos</p>
+            </div>
+        </div>
+        <button class="btn-audio" id="audioToggleBtn" onclick="toggleAudio()">🔊 Som</button>
+    </div>
+
+    <div class="game-panel">
+        
+        <!-- TELA DE ENTRADA (NOME E MENTOR) -->
+        <div id="startScreen" class="overlay-screen">
+            <h2 style="color: #d4af37; margin: 0 0 4px 0; font-size: 1.1rem;">Boas-Vindas ao Terreiro</h2>
+            <p style="font-size: 0.72rem; color: #9ca3af; margin-bottom: 14px;">Identifique-se e escolha seu Guia Protetor para a jornada:</p>
+            
+            <label style="font-size: 0.75rem; color: #d4af37; text-align: left; width: 100%;">Seu Nome ou Apelido:</label>
+            <input type="text" id="playerNameInput" placeholder="Ex: Pai/Mãe de Santo ou Apelido" value="Peão de Aruanda">
+
+            <label style="font-size: 0.75rem; color: #d4af37; text-align: left; width: 100%;">Escolha seu Mentor(a):</label>
+            <select id="mentorSelect">
+                <option value="Boiadeiro">Seu Boiadeiro (Foco e Firmeza)</option>
+                <option value="Exu">Exu / Pombo Gira (Estratégia e Caminhos)</option>
+                <option value="PretoVelho">Pai João / Preta Velha (Paciência e Sabedoria)</option>
+                <option value="Cigana">Mãe Cigana (Intuição e Sorte)</option>
+                <option value="Caboclo">Caboclo das Matas (Visão e Precisão)</option>
+            </select>
+
+            <button class="btn-action" onclick="startGame()">Entrar na Roda 🃏</button>
+        </div>
+
+        <!-- TELA DE FIM DE JOGO / VITÓRIA -->
+        <div id="gameOverScreen" class="overlay-screen hidden">
+            <h2 id="endTitle" style="color: #d4af37; margin: 0; font-size: 1.2rem;">Fim de Jogo 🏆</h2>
+            <p id="endText" style="font-size: 0.82rem; color: #f3f4f6; margin: 12px 0; line-height: 1.4;"></p>
+            <button class="btn-action" onclick="resetToMenu()">Jogar Novamente</button>
+        </div>
+
+        <div class="stats-bar">
+            <span>Jogador: <strong id="uiPlayerName" style="color:#10b981;">-</strong></span>
+            <span>Pts: <strong id="uiScore" style="color:#fff;">0</strong></span>
+            <span>Streak: <strong id="uiStreak" style="color:#f59e0b;">1x</strong></span>
+            <span>Recorde: <strong id="uiHighScore" style="color:#a855f7;">0</strong></span>
+        </div>
+
+        <div class="mentor-dialogue" id="mentorDialogue">
+            💬 Salve Aruanda! Escolha uma carta adjacente à base para iniciar.
+        </div>
+
+        <div class="canvas-wrapper">
+            <canvas id="gameCanvas" width="376" height="420"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Configurações e Estado do Jogo
+        let playerName = "Filho(a) de Fé";
+        let mentorKey = "Boiadeiro";
+        let score = 0;
+        let highScore = localStorage.getItem('tripeaks_highscore') || 0;
+        let streak = 0;
+        let gameActive = false;
+
+        let deck = [];
+        let tableCards = []; // 28 cartas dos 3 picos
+        let wasteCard = null; // Carta de descarte ativa
+        let stockCards = []; // Monte de compras
+        
+        let idleTimer = 0;
+        let hintedCardId = null;
+
+        const mentorQuotes = {
+            Boiadeiro: {
+                start: "Boiadeiro diz: 'Firmo o passo na estrada, vamos tocar essa boiada de cartas!'",
+                hint: "Boiadeiro diz: 'Olha o laço, compadre! Joga essa carta aqui!'",
+                noMoves: "Boiadeiro diz: 'A cerca fechou! Puxa uma carta do monte para abrir porteira.'",
+                streak6: "Boiadeiro diz: 'Ê boi! Seis seguidas na porteira, que tiro certeiro, meu patrão!'",
+                win: "Boiadeiro diz: 'Boiada limpa! Vitória garantida no terreiro!'"
+            },
+            Exu: {
+                start: "Exu diz: 'Laroyê! Vamos abrir os caminhos dessa mesa com sabedoria.'",
+                hint: "Exu diz: 'O caminho está livre por aqui, abra os olhos.'",
+                noMoves: "Exu diz: 'Os caminhos fecharam momentaneamente. Compre do monte.'",
+                streak6: "Exu diz: 'É derramamento de Axé! Seis seguidas sem errar o passo! Odara!'",
+                win: "Exu diz: 'Caminhos abertos e coroados. Salve a sua banda!'"
+            },
+            PretoVelho: {
+                start: "Pai João diz: 'Senta aqui no banquinho, meu filho. A pressa é inimiga da perfeição.'",
+                hint: "PretoVelho diz: 'Olha com calma, meu filho, esta cartinha serve.'",
+                noMoves: "PretoVelho diz: 'Minhas dores... O monte tem a resposta, puxa uma de lá.'",
+                streak6: "PretoVelho diz: 'Ora, louvado seja Deus! Seis seguidas, que benção bonita! Cumpriu a missão.'",
+                win: "PretoVelho diz: 'Descansa a mente, o serviço foi bem feito.'"
+            },
+            Cigana: {
+                start: "Mãe Cigana diz: '🔮 Baralho na mesa, a sorte sorri para quem tem fé! Vamos jogar.'",
+                hint: "Cigana diz: 'As cartas me segredam que esta é a jogada certa.'",
+                noMoves: "Cigana diz: 'A sorte está dormindo no monte, vire uma carta para acordá-la.'",
+                streak6: "Cigana diz: '✨ Maravilha de ouro! Seis seguidas, a prosperidade é toda sua!'",
+                win: "Cigana diz: 'Que o brilho do ouro e das estrelas acompanhe sua vitória!'"
+            },
+            Caboclo: {
+                start: "Caboclo diz: 'Okê Arô! Olhos de águia na floresta de cartas.'",
+                hint: "Caboclo diz: 'Flecha certeira! Jogue esta carta.'",
+                noMoves: "Caboclo diz: 'A mata fechou a visibilidade. Chame o vento do monte puxando uma carta.'",
+                streak6: "Caboclo diz: 'Okê Arô! Seis flechas certeiras no alvo! Axé poderoso!'",
+                win: "Caboclo diz: 'Vitória na mata sagrada! Salve os caboclos de Aruanda!'"
+            }
+        };
+
+        function setMentorMessage(text) {
+            document.getElementById('mentorDialogue').innerText = text;
+        }
+
+        function startGame() {
+            const nameInput = document.getElementById('playerNameInput').value.trim();
+            if (nameInput) playerName = nameInput;
+            mentorKey = document.getElementById('mentorSelect').value;
+
+            document.getElementById('uiPlayerName').innerText = playerName;
+            document.getElementById('uiHighScore').innerText = highScore;
+
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('gameOverScreen').classList.add('hidden');
+
+            initAudio();
+            initGameData();
+            gameActive = true;
+            setMentorMessage(mentorQuotes[mentorKey].start);
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ÁUDIO SINTETIZADO
+        let audioCtx = null;
+        let audioMuted = false;
+        function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        function toggleAudio() {
+            audioMuted = !audioMuted;
+            document.getElementById('audioToggleBtn').innerHTML = audioMuted ? '🔇 Mudo' : '🔊 Som';
+        }
+        function playSound(type) {
+            if (audioMuted || !audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            if (type === 'card') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(350, now);
+                osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+                gain.gain.setValueAtTime(0.15, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } else if (type === 'stock') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(220, now);
+                gain.gain.setValueAtTime(0.15, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now); osc.stop(now + 0.15);
+            } else if (type === 'win') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(440, now);
+                osc.frequency.setValueAtTime(554, now + 0.15); osc.frequency.setValueAtTime(659, now + 0.3);
+                gain.gain.setValueAtTime(0.25, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.6);
+                osc.start(now); osc.stop(now + 0.6);
+            }
+        }
+
+        // ESTRUTURA DO TRIPEAKS
+        function initGameData() {
+            score = 0;
+            streak = 0;
+            idleTimer = 0;
+            hintedCardId = null;
+            updateUI();
+
+            // Criar Baralho (52 cartas)
+            let fullDeck = [];
+            const suits = ['♠', '♥', '♦', '♣'];
+            for (let s of suits) {
+                for (let v = 1; v <= 13; v++) {
+                    fullDeck.push({ suit: s, val: v, faceUp: false, id: Math.random() });
+                }
+            }
+            // Embaralhar
+            fullDeck.sort(() => Math.random() - 0.5);
+
+            // 28 cartas para a mesa (3 picos do TriPeaks)
+            tableCards = [];
+            let cardIdx = 0;
+
+            // Definição das posições das 28 cartas (Layout piramidal TriPeaks)
+            // 4 linhas: Row 0 (3 cartas), Row 1 (6 cartas), Row 2 (9 cartas), Row 3 (10 cartas)
+            // Coordenadas relativas calculadas no render
+            let cardCoords = getTriPeaksCoordinates();
+
+            for (let i = 0; i < 28; i++) {
+                let c = fullDeck[cardIdx++];
+                c.x = cardCoords[i].x;
+                c.y = cardCoords[i].y;
+                c.row = cardCoords[i].row;
+                c.col = cardCoords[i].col;
+                c.id = i;
+                tableCards.push(c);
+            }
+
+            // O restante vai para o monte (stock) e uma para o descarte (waste)
+            wasteCard = fullDeck[cardIdx++];
+            wasteCard.faceUp = true;
+            stockCards = fullDeck.slice(cardIdx);
+
+            updateCardVisibilities();
+        }
+
+        // Coordenadas dos 3 picos do TriPeaks
+        function getTriPeaksCoordinates() {
+            let coords = [];
+            // Row 0 (3 cartas de topo dos picos)
+            let peakX = [54, 188, 322];
+            let y0 = 20;
+            for(let p=0; p<3; p++) coords.push({ x: peakX[p], y: y0, row: 0, col: p });
+
+            // Row 1 (6 cartas)
+            let r1X = [20, 88, 154, 222, 288, 356]; // agrupadas em pares debaixo de cada pico
+            // Simplificando coordenadas para caber no canvas 376x420
+            let xsRow1 = [37, 71, 171, 205, 305, 339];
+            // Vamos usar um layout padrão limpo em grade piramidal:
+            coords = [];
+            
+            // Layout geométrico exato das 28 cartas do TriPeaks:
+            // Linha 0 (Topo): 3 cartas (Picos A, B, C)
+            const pX = [65, 188, 311];
+            const pY = 15;
+            // Pico 1
+            coords.push({x: 50, y: 15, row: 0, col: 0});
+            coords.push({x: 188, y: 15, row: 0, col: 1});
+            coords.push({x: 326, y: 15, row: 0, col: 2});
+
+            // Linha 1 (6 cartas)
+            let r1 = [
+                {x: 25, y: 55}, {x: 75, y: 55},
+                {x: 163, y: 55}, {x: 213, y: 55},
+                {x: 301, y: 55}, {x: 351, y: 55}
+            ];
+            r1.forEach((c, i) => coords.push({...c, row: 1, col: i}));
+
+            // Linha 2 (9 cartas)
+            let r2 = [
+                {x: 0, y: 95}, {x: 50, y: 95}, {x: 100, y: 95},
+                {x: 138, y: 95}, {x: 188, y: 95}, {x: 238, y: 95},
+                {x: 276, y: 95}, {x: 326, y: 95}, {x: 376, y: 95} // Ajustado levemente para largura 376
+            ];
+            // Correção para largura 376 max (margem 0 a 336)
+            let r2X = [12, 53, 94, 148, 188, 228, 282, 323, 364];
+            r2X.forEach((x, i) => coords.push({x: x, y: 95, row: 2, col: i}));
+
+            // Linha 3 (10 cartas - Base)
+            let r3X = [6, 47, 88, 129, 170, 211, 252, 293, 334, 375];
+            // Ajuste para 376 width (cartas largura 40 -> max x = 336)
+            let baseXs = [];
+            for(let i=0; i<10; i++) baseXs.push(i * 36 + 8);
+            baseXs.forEach((x, i) => coords.push({x: x, y: 135, row: 3, col: i}));
+
+            return coords;
+        }
+
+        // Regra de sobreposição: uma carta na mesa só fica ativa se não tiver cartas cobrindo ela embaixo
+        function updateCardVisibilities() {
+            // Mapeamento de quais cartas cobrem quais no TriPeaks padrão:
+            // Row 0 é coberta por Row 1. Row 1 por Row 2. Row 2 por Row 3.
+            // Especificamente:
+            // Card 0 (row 0, col 0) é coberto por card 0 e 1 da row 1.
+            // Para simplificar e garantir precisão visual e jogabilidade fluida:
+            // Uma carta é interativa se não houver cartas nas linhas inferiores diretamente abaixo dela sobrepondo.
+            tableCards.forEach(card => {
+                if (card.row === 3) {
+                    card.faceUp = true; // Base toda aberta
+                } else {
+                    // Verifica se as cartas cobrindo abaixo foram removidas
+                    let covered = false;
+                    tableCards.forEach(other => {
+                        if (other.row === card.row + 1 && (other.col === card.col || other.col === card.col + 1)) {
+                            covered = true; // Se a carta debaixo ainda existe, esta fica coberta
+                        }
+                        if (card.row === 0 && other.row === 1) {
+                            if (card.col === 0 && (other.col === 0 || other.col === 1)) covered = true;
+                            if (card.col === 1 && (other.col === 2 || other.col === 3)) covered = true;
+                            if (card.col === 2 && (other.col === 4 || other.col === 5)) covered = true;
+                        }
+                    });
+                    card.faceUp = !covered;
+                }
+            });
+        }
+
+        // Verifica se uma carta da mesa pode ser jogada no descarte (Adjacência +1 ou -1, aceitando Ás/Rei wraparound)
+        function canPlayCard(card) {
+            if (!card.faceUp) return false;
+            let v1 = card.val;
+            let v2 = wasteCard.val;
+            // Adjacência estrita ou circular (Ás 1 liga com Rei 13 e 2)
+            let diff = Math.abs(v1 - v2);
+            return diff === 1 || (v1 === 1 && v2 === 13) || (v1 === 13 && v2 === 1);
+        }
+
+        // Encontra jogadas válidas na mesa
+        function getValidMoves() {
+            return tableCards.filter(c => canPlayCard(c));
+        }
+
+        // Clique no Canvas
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const cardW = 40;
+        const cardH = 58;
+
+        canvas.addEventListener('click', (e) => {
+            if (!gameActive) return;
+            idleTimer = 0; // Reset timer de dica
+            hintedCardId = null;
+
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            // 1. Verificar clique no Monte (Stock)
+            // Posição do Monte na tela: ex: x = 100, y = 230
+            let stockX = 110, stockY = 235;
+            if (mouseX >= stockX && mouseX <= stockX + cardW && mouseY >= stockY && mouseY <= stockY + cardH) {
+                drawFromStock();
+                return;
+            }
+
+            // 2. Verificar clique nas cartas da mesa (de trás para frente para pegar o topo)
+            for (let i = tableCards.length - 1; i >= 0; i--) {
+                let card = tableCards[i];
+                if (mouseX >= card.x && mouseX <= card.x + cardW && mouseY >= card.y && mouseY <= card.y + cardH) {
+                    if (canPlayCard(card)) {
+                        playTableCard(i);
+                        return;
+                    }
+                }
+            }
+        });
+
+        function playTableCard(index) {
+            let card = tableCards.splice(index, 1)[0];
+            wasteCard = card;
+            playSound('card');
+
+            // Sistema de Pontuação por Sequência (Streak)
+            streak++;
+            let earned = streak * 10;
+            score += earned;
+
+            updateCardVisibilities();
+            checkGameState();
+
+            // Checar se atingiu 6 cartas seguidas de sequência
+            if (streak === 6) {
+                setMentorMessage(mentorQuotes[mentorKey].streak6);
+            } else if (streak > 1) {
+                setMentorMessage(`${mentorKey} diz: 'Sequência de ${streak}x! Axé acumulado (+${earned} pts)!'`);
+            } else {
+                setMentorMessage(`${mentorKey} aprova a jogada.`);
+            }
+            updateUI();
+        }
+
+        function drawFromStock() {
+            if (stockCards.length === 0) {
+                setMentorMessage(`${mentorKey} diz: 'O monte está totalmente vazio, agora é com sua sorte nas cartas da mesa!'`);
+                return;
+            }
+            // Penalidade de comprar do monte: -5 pontos e zera o streak
+            score = Math.max(0, score - 5);
+            streak = 0;
+
+            let newCard = stockCards.pop();
+            newCard.faceUp = true;
+            wasteCard = newCard;
+            playSound('stock');
+            setMentorMessage(`${mentorKey} diz: 'Carta puxada do monte. Streak reiniciado (-5 pts).'`);
+            
+            checkGameState();
+            updateUI();
+        }
+
+        function checkGameState() {
+            if (tableCards.length === 0) {
+                // Vitória!
+                gameActive = false;
+                playSound('win');
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('tripeaks_highscore', highScore);
+                }
+                document.getElementById('endTitle').innerText = "Vitória Gloriosa! 🏆";
+                document.getElementById('endText').innerHTML = `Parabéns, <strong>${playerName}</strong>!<br>Você limpou todos os picos de Aruanda!<br><br>Pontuação Final: <strong>${score} pts</strong>`;
+                document.getElementById('gameOverScreen').classList.remove('hidden');
+                setMentorMessage(mentorQuotes[mentorKey].win);
+                return;
+            }
+
+            // Verificar se há movimentos possíveis
+            let valid = getValidMoves();
+            if (valid.length === 0 && stockCards.length === 0) {
+                // Derrota / Sem jogadas
+                gameActive = false;
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('tripeaks_highscore', highScore);
+                }
+                document.getElementById('endTitle').innerText = "Fim da Linha 🌿";
+                document.getElementById('endText').innerHTML = `As cartas fecharam os caminhos, <strong>${playerName}</strong>.<br>Não há mais jogadas possíveis nem cartas no monte.<br><br>Pontuação: <strong>${score} pts</strong>`;
+                document.getElementById('gameOverScreen').classList.remove('hidden');
+                setMentorMessage(`${mentorKey} diz: 'As voltas que o mundo dá... Tente novamente na próxima gira!'`);
+            } else if (valid.length === 0) {
+                setMentorMessage(mentorQuotes[mentorKey].noMoves);
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('uiScore').innerText = score;
+            document.getElementById('uiStreak').innerText = streak + 'x';
+            document.getElementById('uiHighScore').innerText = highScore;
+        }
+
+        // Loop principal de renderização e timer de dicas
+        let lastTime = 0;
+        function gameLoop(timestamp) {
+            if (!gameActive) return;
+
+            if (!lastTime) lastTime = timestamp;
+            let dt = timestamp - lastTime;
+            lastTime = timestamp;
+
+            idleTimer += dt;
+            // Se passar de 8 segundos (8000ms) sem ação, o mentor dá uma dica brilhando uma carta válida
+            if (idleTimer > 8000 && !hintedCardId) {
+                let valid = getValidMoves();
+                if (valid.length > 0) {
+                    let hintCard = valid[Math.floor(Math.random() * valid.length)];
+                    hintedCardId = hintCard.id;
+                    setMentorMessage(mentorQuotes[mentorKey].hint);
+                }
+                idleTimer = 0;
+            }
+
+            renderCanvas();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function renderCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Desenhar Cartas da Mesa
+            tableCards.forEach(card => {
+                drawCard(card, card.x, card.y, card.id === hintedCardId);
+            });
+
+            // Desenhar Pilha de Compras (Stock) e Descarte (Waste) na parte inferior (ex: y = 235)
+            let stockX = 110, stockY = 235;
+            let wasteX = 226, wasteY = 235;
+
+            // Monte (Stock) - se houver cartas
+            if (stockCards.length > 0) {
+                // Desenhar verso da carta estilizado com a logo
+                ctx.fillStyle = '#1e3a8a';
+                ctx.fillRect(stockX, stockY, cardW, cardH);
+                ctx.strokeStyle = '#d4af37';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(stockX, stockY, cardW, cardH);
+                ctx.fillStyle = '#d4af37';
+                ctx.font = 'bold 10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`Monte (${stockCards.length})`, stockX + cardW/2, stockY + cardH/2 + 3);
+            } else {
+                ctx.strokeStyle = 'rgba(212, 175, 55, 0.3)';
+                ctx.setLineDash([4, 4]);
+                ctx.strokeRect(stockX, stockY, cardW, cardH);
+                ctx.setLineDash([]);
+            }
+
+            // Carta de Descarte (Waste / Ativa)
+            if (wasteCard) {
+                drawCard(wasteCard, wasteX, wasteY, false);
+                // Label "Atual"
+                ctx.fillStyle = '#d4af37';
+                ctx.font = 'bold 9px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText("Base Atual", wasteX + cardW/2, wasteY - 4);
+            }
+        }
+
+        function drawCard(card, x, y, isHinted) {
+            ctx.save();
+            if (card.faceUp) {
+                // Fundo da carta branca
+                ctx.fillStyle = isHinted ? '#fef08a' : '#ffffff';
+                ctx.fillRect(x, y, cardW, cardH);
+                
+                ctx.strokeStyle = isHinted ? '#eab308' : '#374151';
+                ctx.lineWidth = isHinted ? 3 : 1.5;
+                ctx.strokeRect(x, y, cardW, cardH);
+
+                // Cor do naipe (Copas e Ouros = Vermelho, Espadas e Paus = Preto)
+                let isRed = (card.suit === '♥' || card.suit === '♦');
+                ctx.fillStyle = isRed ? '#dc2626' : '#111827';
+                ctx.font = 'bold 13px sans-serif';
+                ctx.textAlign = 'left';
+
+                let valStr = card.val === 1 ? 'A' : (card.val === 11 ? 'J' : (card.val === 12 ? 'Q' : (card.val === 13 ? 'K' : card.val)));
+                
+                // Valor e Naipe no canto superior esquerdo
+                ctx.fillText(valStr, x + 4, y + 14);
+                ctx.font = '12px sans-serif';
+                ctx.fillText(card.suit, x + 4, y + 27);
+
+                // Símbolo grande no centro
+                ctx.font = '18px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(card.suit, x + cardW / 2, y + cardH / 2 + 6);
+            } else {
+                // Carta virada para baixo (Verso com temática)
+                ctx.fillStyle = '#1e3a8a';
+                ctx.fillRect(x, y, cardW, cardH);
+                ctx.strokeStyle = '#d4af37';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(x, y, cardW, cardH);
+
+                // Detalhe interno
+                ctx.fillStyle = '#d4af37';
+                ctx.font = '10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('🎴', x + cardW/2, y + cardH/2 + 4);
+            }
+            ctx.restore();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Pronto para iniciar
+        });
+    </script>
+</body>
+</html>
