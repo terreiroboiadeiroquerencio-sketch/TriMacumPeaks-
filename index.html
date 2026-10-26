@@ -29,7 +29,7 @@
             border-radius: 10px;
             border: 2px solid #d4af37;
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
         }
         .header-left {
             display: flex;
@@ -61,7 +61,7 @@
             border: 2px solid #d4af37;
             border-radius: 12px;
             padding: 12px;
-            max-width: 400px;
+            max-width: 420px;
             width: 100%;
             display: flex;
             flex-direction: column;
@@ -94,7 +94,7 @@
             font-size: 0.72rem;
             text-align: center;
             margin-bottom: 8px;
-            min-height: 32px;
+            min-height: 34px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -102,8 +102,8 @@
 
         .canvas-wrapper {
             position: relative;
-            width: 376px;
-            height: 420px;
+            width: 400px;
+            height: 360px;
         }
 
         canvas {
@@ -171,7 +171,7 @@
 
     <div class="game-panel">
         
-        <!-- TELA DE ENTRADA (NOME E MENTOR) -->
+        <!-- TELA DE ENTRADA -->
         <div id="startScreen" class="overlay-screen">
             <h2 style="color: #d4af37; margin: 0 0 4px 0; font-size: 1.1rem;">Boas-Vindas ao Terreiro</h2>
             <p style="font-size: 0.72rem; color: #9ca3af; margin-bottom: 14px;">Identifique-se e escolha seu Guia Protetor para a jornada:</p>
@@ -191,7 +191,7 @@
             <button class="btn-action" onclick="startGame()">Entrar na Roda 🃏</button>
         </div>
 
-        <!-- TELA DE FIM DE JOGO / VITÓRIA -->
+        <!-- TELA DE FIM DE JOGO -->
         <div id="gameOverScreen" class="overlay-screen hidden">
             <h2 id="endTitle" style="color: #d4af37; margin: 0; font-size: 1.2rem;">Fim de Jogo 🏆</h2>
             <p id="endText" style="font-size: 0.82rem; color: #f3f4f6; margin: 12px 0; line-height: 1.4;"></p>
@@ -201,21 +201,20 @@
         <div class="stats-bar">
             <span>Jogador: <strong id="uiPlayerName" style="color:#10b981;">-</strong></span>
             <span>Pts: <strong id="uiScore" style="color:#fff;">0</strong></span>
-            <span>Streak: <strong id="uiStreak" style="color:#f59e0b;">1x</strong></span>
+            <span>Streak: <strong id="uiStreak" style="color:#f59e0b;">0x</strong></span>
             <span>Recorde: <strong id="uiHighScore" style="color:#a855f7;">0</strong></span>
         </div>
 
         <div class="mentor-dialogue" id="mentorDialogue">
-            💬 Salve Aruanda! Escolha uma carta adjacente à base para iniciar.
+            💬 Salve Aruanda! Escolha uma carta da mesa para iniciar.
         </div>
 
         <div class="canvas-wrapper">
-            <canvas id="gameCanvas" width="376" height="420"></canvas>
+            <canvas id="gameCanvas" width="400" height="360"></canvas>
         </div>
     </div>
 
     <script>
-        // Configurações e Estado do Jogo
         let playerName = "Filho(a) de Fé";
         let mentorKey = "Boiadeiro";
         let score = 0;
@@ -223,20 +222,23 @@
         let streak = 0;
         let gameActive = false;
 
-        let deck = [];
-        let tableCards = []; // 28 cartas dos 3 picos
-        let wasteCard = null; // Carta de descarte ativa
-        let stockCards = []; // Monte de compras
-        
+        let tableCards = [];
+        let wasteCard = null;
+        let stockCards = [];
         let idleTimer = 0;
         let hintedCardId = null;
+
+        // Pré-carregamento da Logo para as Costas da Carta
+        const logoImg = new Image();
+        logoImg.crossOrigin = "anonymous";
+        logoImg.src = "https://i.ibb.co/60wpJ3xG/Logo-terreiro.jpg";
 
         const mentorQuotes = {
             Boiadeiro: {
                 start: "Boiadeiro diz: 'Firmo o passo na estrada, vamos tocar essa boiada de cartas!'",
                 hint: "Boiadeiro diz: 'Olha o laço, compadre! Joga essa carta aqui!'",
-                noMoves: "Boiadeiro diz: 'A cerca fechou! Puxa uma carta do monte para abrir porteira.'",
-                streak6: "Boiadeiro diz: 'Ê boi! Seis seguidas na porteira, que tiro certeiro, meu patrão!'",
+                noMoves: "Boiadeiro diz: 'A cerca fechou! Puxa uma carta do monte para abrir a porteira.'",
+                streak6: "Boiadeiro diz: 'Ê boi! Seis seguidas na porteira, que tiro certeiro!'",
                 win: "Boiadeiro diz: 'Boiada limpa! Vitória garantida no terreiro!'"
             },
             Exu: {
@@ -250,14 +252,14 @@
                 start: "Pai João diz: 'Senta aqui no banquinho, meu filho. A pressa é inimiga da perfeição.'",
                 hint: "PretoVelho diz: 'Olha com calma, meu filho, esta cartinha serve.'",
                 noMoves: "PretoVelho diz: 'Minhas dores... O monte tem a resposta, puxa uma de lá.'",
-                streak6: "PretoVelho diz: 'Ora, louvado seja Deus! Seis seguidas, que benção bonita! Cumpriu a missão.'",
+                streak6: "PretoVelho diz: 'Ora, louvado seja Deus! Seis seguidas, que benção bonita!'",
                 win: "PretoVelho diz: 'Descansa a mente, o serviço foi bem feito.'"
             },
             Cigana: {
-                start: "Mãe Cigana diz: '🔮 Baralho na mesa, a sorte sorri para quem tem fé! Vamos jogar.'",
+                start: "Mãe Cigana diz: '🔮 Baralho na mesa, a sorte sorri para quem tem fé!'",
                 hint: "Cigana diz: 'As cartas me segredam que esta é a jogada certa.'",
                 noMoves: "Cigana diz: 'A sorte está dormindo no monte, vire uma carta para acordá-la.'",
-                streak6: "Cigana diz: '✨ Maravilha de ouro! Seis seguidas, a prosperidade é toda sua!'",
+                streak6: "Cigana diz: '✨ Maravilha de ouro! Seis seguidas, a prosperidade é sua!'",
                 win: "Cigana diz: 'Que o brilho do ouro e das estrelas acompanhe sua vitória!'"
             },
             Caboclo: {
@@ -291,6 +293,12 @@
             requestAnimationFrame(gameLoop);
         }
 
+        function resetToMenu() {
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
+            gameActive = false;
+        }
+
         // ÁUDIO SINTETIZADO
         let audioCtx = null;
         let audioMuted = false;
@@ -322,7 +330,7 @@
             }
         }
 
-        // ESTRUTURA DO TRIPEAKS
+        // CRIAR BARALHO E DISPOSIÇÃO DO TRIPEAKS
         function initGameData() {
             score = 0;
             streak = 0;
@@ -330,164 +338,130 @@
             hintedCardId = null;
             updateUI();
 
-            // Criar Baralho (52 cartas)
             let fullDeck = [];
             const suits = ['♠', '♥', '♦', '♣'];
             for (let s of suits) {
                 for (let v = 1; v <= 13; v++) {
-                    fullDeck.push({ suit: s, val: v, faceUp: false, id: Math.random() });
+                    fullDeck.push({ suit: s, val: v, faceUp: false });
                 }
             }
-            // Embaralhar
             fullDeck.sort(() => Math.random() - 0.5);
 
-            // 28 cartas para a mesa (3 picos do TriPeaks)
-            tableCards = [];
-            let cardIdx = 0;
+            // Definição dos 28 nós do TriPeaks com conexões de cobrimento (children)
+            // Estrutura das 4 linhas:
+            // L0: 3 cartas (indices 0, 1, 2)
+            // L1: 6 cartas (indices 3..8)
+            // L2: 9 cartas (indices 9..17)
+            // L3: 10 cartas (indices 18..27 - Base)
 
-            // Definição das posições das 28 cartas (Layout piramidal TriPeaks)
-            // 4 linhas: Row 0 (3 cartas), Row 1 (6 cartas), Row 2 (9 cartas), Row 3 (10 cartas)
-            // Coordenadas relativas calculadas no render
-            let cardCoords = getTriPeaksCoordinates();
+            tableCards = [];
+
+            // Layout de coordenadas ajustado perfeitamente para Canvas de 400px de largura
+            const positions = [
+                // Linha 0 (3 picos)
+                { x: 62, y: 15, row: 0, children: [3, 4] },
+                { x: 180, y: 15, row: 0, children: [5, 6] },
+                { x: 298, y: 15, row: 0, children: [7, 8] },
+
+                // Linha 1 (6 cartas)
+                { x: 42, y: 55, row: 1, children: [9, 10] },
+                { x: 82, y: 55, row: 1, children: [10, 11] },
+                { x: 160, y: 55, row: 1, children: [12, 13] },
+                { x: 200, y: 55, row: 1, children: [13, 14] },
+                { x: 278, y: 55, row: 1, children: [15, 16] },
+                { x: 318, y: 55, row: 1, children: [16, 17] },
+
+                // Linha 2 (9 cartas)
+                { x: 22, y: 95, row: 2, children: [18, 19] },
+                { x: 62, y: 95, row: 2, children: [19, 20] },
+                { x: 102, y: 95, row: 2, children: [20, 21] },
+                { x: 140, y: 95, row: 2, children: [21, 22] },
+                { x: 180, y: 95, row: 2, children: [22, 23] },
+                { x: 220, y: 95, row: 2, children: [23, 24] },
+                { x: 258, y: 95, row: 2, children: [24, 25] },
+                { x: 298, y: 95, row: 2, children: [25, 26] },
+                { x: 338, y: 95, row: 2, children: [26, 27] },
+
+                // Linha 3 (10 cartas - Base)
+                { x: 8, y: 135, row: 3, children: [] },
+                { x: 46, y: 135, row: 3, children: [] },
+                { x: 84, y: 135, row: 3, children: [] },
+                { x: 122, y: 135, row: 3, children: [] },
+                { x: 160, y: 135, row: 3, children: [] },
+                { x: 198, y: 135, row: 3, children: [] },
+                { x: 236, y: 135, row: 3, children: [] },
+                { x: 274, y: 135, row: 3, children: [] },
+                { x: 312, y: 135, row: 3, children: [] },
+                { x: 350, y: 135, row: 3, children: [] }
+            ];
 
             for (let i = 0; i < 28; i++) {
-                let c = fullDeck[cardIdx++];
-                c.x = cardCoords[i].x;
-                c.y = cardCoords[i].y;
-                c.row = cardCoords[i].row;
-                c.col = cardCoords[i].col;
-                c.id = i;
-                tableCards.push(c);
+                let card = fullDeck[i];
+                card.id = i;
+                card.x = positions[i].x;
+                card.y = positions[i].y;
+                card.row = positions[i].row;
+                card.children = positions[i].children;
+                card.faceUp = (card.row === 3); // Apenas a base começa virada
+                tableCards.push(card);
             }
 
-            // O restante vai para o monte (stock) e uma para o descarte (waste)
-            wasteCard = fullDeck[cardIdx++];
+            wasteCard = fullDeck[28];
             wasteCard.faceUp = true;
-            stockCards = fullDeck.slice(cardIdx);
+            stockCards = fullDeck.slice(29);
 
             updateCardVisibilities();
         }
 
-        // Coordenadas dos 3 picos do TriPeaks
-        function getTriPeaksCoordinates() {
-            let coords = [];
-            // Row 0 (3 cartas de topo dos picos)
-            let peakX = [54, 188, 322];
-            let y0 = 20;
-            for(let p=0; p<3; p++) coords.push({ x: peakX[p], y: y0, row: 0, col: p });
-
-            // Row 1 (6 cartas)
-            let r1X = [20, 88, 154, 222, 288, 356]; // agrupadas em pares debaixo de cada pico
-            // Simplificando coordenadas para caber no canvas 376x420
-            let xsRow1 = [37, 71, 171, 205, 305, 339];
-            // Vamos usar um layout padrão limpo em grade piramidal:
-            coords = [];
-            
-            // Layout geométrico exato das 28 cartas do TriPeaks:
-            // Linha 0 (Topo): 3 cartas (Picos A, B, C)
-            const pX = [65, 188, 311];
-            const pY = 15;
-            // Pico 1
-            coords.push({x: 50, y: 15, row: 0, col: 0});
-            coords.push({x: 188, y: 15, row: 0, col: 1});
-            coords.push({x: 326, y: 15, row: 0, col: 2});
-
-            // Linha 1 (6 cartas)
-            let r1 = [
-                {x: 25, y: 55}, {x: 75, y: 55},
-                {x: 163, y: 55}, {x: 213, y: 55},
-                {x: 301, y: 55}, {x: 351, y: 55}
-            ];
-            r1.forEach((c, i) => coords.push({...c, row: 1, col: i}));
-
-            // Linha 2 (9 cartas)
-            let r2 = [
-                {x: 0, y: 95}, {x: 50, y: 95}, {x: 100, y: 95},
-                {x: 138, y: 95}, {x: 188, y: 95}, {x: 238, y: 95},
-                {x: 276, y: 95}, {x: 326, y: 95}, {x: 376, y: 95} // Ajustado levemente para largura 376
-            ];
-            // Correção para largura 376 max (margem 0 a 336)
-            let r2X = [12, 53, 94, 148, 188, 228, 282, 323, 364];
-            r2X.forEach((x, i) => coords.push({x: x, y: 95, row: 2, col: i}));
-
-            // Linha 3 (10 cartas - Base)
-            let r3X = [6, 47, 88, 129, 170, 211, 252, 293, 334, 375];
-            // Ajuste para 376 width (cartas largura 40 -> max x = 336)
-            let baseXs = [];
-            for(let i=0; i<10; i++) baseXs.push(i * 36 + 8);
-            baseXs.forEach((x, i) => coords.push({x: x, y: 135, row: 3, col: i}));
-
-            return coords;
-        }
-
-        // Regra de sobreposição: uma carta na mesa só fica ativa se não tiver cartas cobrindo ela embaixo
+        // UMA CARTA SÓ É DESBLOQUEADA SE TODAS AS SUAS CARTAS FILHAS (Abaixo) JÁ FORAM REMOVIDAS
         function updateCardVisibilities() {
-            // Mapeamento de quais cartas cobrem quais no TriPeaks padrão:
-            // Row 0 é coberta por Row 1. Row 1 por Row 2. Row 2 por Row 3.
-            // Especificamente:
-            // Card 0 (row 0, col 0) é coberto por card 0 e 1 da row 1.
-            // Para simplificar e garantir precisão visual e jogabilidade fluida:
-            // Uma carta é interativa se não houver cartas nas linhas inferiores diretamente abaixo dela sobrepondo.
             tableCards.forEach(card => {
                 if (card.row === 3) {
-                    card.faceUp = true; // Base toda aberta
+                    card.faceUp = true;
                 } else {
-                    // Verifica se as cartas cobrindo abaixo foram removidas
-                    let covered = false;
-                    tableCards.forEach(other => {
-                        if (other.row === card.row + 1 && (other.col === card.col || other.col === card.col + 1)) {
-                            covered = true; // Se a carta debaixo ainda existe, esta fica coberta
-                        }
-                        if (card.row === 0 && other.row === 1) {
-                            if (card.col === 0 && (other.col === 0 || other.col === 1)) covered = true;
-                            if (card.col === 1 && (other.col === 2 || other.col === 3)) covered = true;
-                            if (card.col === 2 && (other.col === 4 || other.col === 5)) covered = true;
-                        }
+                    // Verifica se ainda existe alguma carta filha cobrindo ela
+                    let isCovered = card.children.some(childId => {
+                        return tableCards.some(tc => tc.id === childId);
                     });
-                    card.faceUp = !covered;
+                    card.faceUp = !isCovered;
                 }
             });
         }
 
-        // Verifica se uma carta da mesa pode ser jogada no descarte (Adjacência +1 ou -1, aceitando Ás/Rei wraparound)
         function canPlayCard(card) {
-            if (!card.faceUp) return false;
+            if (!card || !card.faceUp) return false;
             let v1 = card.val;
             let v2 = wasteCard.val;
-            // Adjacência estrita ou circular (Ás 1 liga com Rei 13 e 2)
             let diff = Math.abs(v1 - v2);
             return diff === 1 || (v1 === 1 && v2 === 13) || (v1 === 13 && v2 === 1);
         }
 
-        // Encontra jogadas válidas na mesa
         function getValidMoves() {
             return tableCards.filter(c => canPlayCard(c));
         }
 
-        // Clique no Canvas
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const cardW = 40;
-        const cardH = 58;
+        const cardW = 42;
+        const cardH = 62;
 
         canvas.addEventListener('click', (e) => {
             if (!gameActive) return;
-            idleTimer = 0; // Reset timer de dica
+            idleTimer = 0;
             hintedCardId = null;
 
             const rect = canvas.getBoundingClientRect();
             const mouseX = e.clientX - rect.left;
             const mouseY = e.clientY - rect.top;
 
-            // 1. Verificar clique no Monte (Stock)
-            // Posição do Monte na tela: ex: x = 100, y = 230
-            let stockX = 110, stockY = 235;
+            // 1. Clique no Monte de Compras (Stock)
+            let stockX = 120, stockY = 240;
             if (mouseX >= stockX && mouseX <= stockX + cardW && mouseY >= stockY && mouseY <= stockY + cardH) {
                 drawFromStock();
                 return;
             }
 
-            // 2. Verificar clique nas cartas da mesa (de trás para frente para pegar o topo)
+            // 2. Clique nas cartas da mesa (da frente para trás)
             for (let i = tableCards.length - 1; i >= 0; i--) {
                 let card = tableCards[i];
                 if (mouseX >= card.x && mouseX <= card.x + cardW && mouseY >= card.y && mouseY <= card.y + cardH) {
@@ -504,7 +478,6 @@
             wasteCard = card;
             playSound('card');
 
-            // Sistema de Pontuação por Sequência (Streak)
             streak++;
             let earned = streak * 10;
             score += earned;
@@ -512,11 +485,10 @@
             updateCardVisibilities();
             checkGameState();
 
-            // Checar se atingiu 6 cartas seguidas de sequência
             if (streak === 6) {
                 setMentorMessage(mentorQuotes[mentorKey].streak6);
             } else if (streak > 1) {
-                setMentorMessage(`${mentorKey} diz: 'Sequência de ${streak}x! Axé acumulado (+${earned} pts)!'`);
+                setMentorMessage(`${mentorKey} diz: 'Sequência de ${streak}x! (+${earned} pts)!'`);
             } else {
                 setMentorMessage(`${mentorKey} aprova a jogada.`);
             }
@@ -525,10 +497,9 @@
 
         function drawFromStock() {
             if (stockCards.length === 0) {
-                setMentorMessage(`${mentorKey} diz: 'O monte está totalmente vazio, agora é com sua sorte nas cartas da mesa!'`);
+                setMentorMessage(`${mentorKey} diz: 'O monte está totalmente vazio!'`);
                 return;
             }
-            // Penalidade de comprar do monte: -5 pontos e zera o streak
             score = Math.max(0, score - 5);
             streak = 0;
 
@@ -536,7 +507,7 @@
             newCard.faceUp = true;
             wasteCard = newCard;
             playSound('stock');
-            setMentorMessage(`${mentorKey} diz: 'Carta puxada do monte. Streak reiniciado (-5 pts).'`);
+            setMentorMessage(`${mentorKey} diz: 'Carta puxada do monte. (-5 pts).'`);
             
             checkGameState();
             updateUI();
@@ -544,7 +515,6 @@
 
         function checkGameState() {
             if (tableCards.length === 0) {
-                // Vitória!
                 gameActive = false;
                 playSound('win');
                 if (score > highScore) {
@@ -558,10 +528,8 @@
                 return;
             }
 
-            // Verificar se há movimentos possíveis
             let valid = getValidMoves();
             if (valid.length === 0 && stockCards.length === 0) {
-                // Derrota / Sem jogadas
                 gameActive = false;
                 if (score > highScore) {
                     highScore = score;
@@ -570,7 +538,7 @@
                 document.getElementById('endTitle').innerText = "Fim da Linha 🌿";
                 document.getElementById('endText').innerHTML = `As cartas fecharam os caminhos, <strong>${playerName}</strong>.<br>Não há mais jogadas possíveis nem cartas no monte.<br><br>Pontuação: <strong>${score} pts</strong>`;
                 document.getElementById('gameOverScreen').classList.remove('hidden');
-                setMentorMessage(`${mentorKey} diz: 'As voltas que o mundo dá... Tente novamente na próxima gira!'`);
+                setMentorMessage(`${mentorKey} diz: 'As voltas que o mundo dá... Tente novamente!'`);
             } else if (valid.length === 0) {
                 setMentorMessage(mentorQuotes[mentorKey].noMoves);
             }
@@ -582,7 +550,6 @@
             document.getElementById('uiHighScore').innerText = highScore;
         }
 
-        // Loop principal de renderização e timer de dicas
         let lastTime = 0;
         function gameLoop(timestamp) {
             if (!gameActive) return;
@@ -592,7 +559,6 @@
             lastTime = timestamp;
 
             idleTimer += dt;
-            // Se passar de 8 segundos (8000ms) sem ação, o mentor dá uma dica brilhando uma carta válida
             if (idleTimer > 8000 && !hintedCardId) {
                 let valid = getValidMoves();
                 if (valid.length > 0) {
@@ -615,22 +581,13 @@
                 drawCard(card, card.x, card.y, card.id === hintedCardId);
             });
 
-            // Desenhar Pilha de Compras (Stock) e Descarte (Waste) na parte inferior (ex: y = 235)
-            let stockX = 110, stockY = 235;
-            let wasteX = 226, wasteY = 235;
+            // Posição centralizada para o Monte (Stock) e Base (Waste)
+            let stockX = 120, stockY = 240;
+            let wasteX = 238, wasteY = 240;
 
-            // Monte (Stock) - se houver cartas
+            // Monte (Stock)
             if (stockCards.length > 0) {
-                // Desenhar verso da carta estilizado com a logo
-                ctx.fillStyle = '#1e3a8a';
-                ctx.fillRect(stockX, stockY, cardW, cardH);
-                ctx.strokeStyle = '#d4af37';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(stockX, stockY, cardW, cardH);
-                ctx.fillStyle = '#d4af37';
-                ctx.font = 'bold 10px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(`Monte (${stockCards.length})`, stockX + cardW/2, stockY + cardH/2 + 3);
+                drawCardBack(stockX, stockY, stockCards.length);
             } else {
                 ctx.strokeStyle = 'rgba(212, 175, 55, 0.3)';
                 ctx.setLineDash([4, 4]);
@@ -638,21 +595,20 @@
                 ctx.setLineDash([]);
             }
 
-            // Carta de Descarte (Waste / Ativa)
+            // Carta de Descarte (Waste)
             if (wasteCard) {
                 drawCard(wasteCard, wasteX, wasteY, false);
-                // Label "Atual"
                 ctx.fillStyle = '#d4af37';
                 ctx.font = 'bold 9px sans-serif';
                 ctx.textAlign = 'center';
-                ctx.fillText("Base Atual", wasteX + cardW/2, wasteY - 4);
+                ctx.fillText("Base Atual", wasteX + cardW / 2, wasteY - 4);
             }
         }
 
+        // Desenhar Carta de Frente
         function drawCard(card, x, y, isHinted) {
             ctx.save();
             if (card.faceUp) {
-                // Fundo da carta branca
                 ctx.fillStyle = isHinted ? '#fef08a' : '#ffffff';
                 ctx.fillRect(x, y, cardW, cardH);
                 
@@ -660,43 +616,65 @@
                 ctx.lineWidth = isHinted ? 3 : 1.5;
                 ctx.strokeRect(x, y, cardW, cardH);
 
-                // Cor do naipe (Copas e Ouros = Vermelho, Espadas e Paus = Preto)
                 let isRed = (card.suit === '♥' || card.suit === '♦');
                 ctx.fillStyle = isRed ? '#dc2626' : '#111827';
-                ctx.font = 'bold 13px sans-serif';
+                ctx.font = 'bold 12px sans-serif';
                 ctx.textAlign = 'left';
 
                 let valStr = card.val === 1 ? 'A' : (card.val === 11 ? 'J' : (card.val === 12 ? 'Q' : (card.val === 13 ? 'K' : card.val)));
                 
-                // Valor e Naipe no canto superior esquerdo
                 ctx.fillText(valStr, x + 4, y + 14);
-                ctx.font = '12px sans-serif';
-                ctx.fillText(card.suit, x + 4, y + 27);
+                ctx.font = '11px sans-serif';
+                ctx.fillText(card.suit, x + 4, y + 26);
 
-                // Símbolo grande no centro
                 ctx.font = '18px sans-serif';
                 ctx.textAlign = 'center';
                 ctx.fillText(card.suit, x + cardW / 2, y + cardH / 2 + 6);
             } else {
-                // Carta virada para baixo (Verso com temática)
-                ctx.fillStyle = '#1e3a8a';
-                ctx.fillRect(x, y, cardW, cardH);
-                ctx.strokeStyle = '#d4af37';
-                ctx.lineWidth = 1.5;
-                ctx.strokeRect(x, y, cardW, cardH);
-
-                // Detalhe interno
-                ctx.fillStyle = '#d4af37';
-                ctx.font = '10px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('🎴', x + cardW/2, y + cardH/2 + 4);
+                drawCardBack(x, y, null);
             }
             ctx.restore();
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            // Pronto para iniciar
-        });
+        // Desenhar Verso da Carta com a LOGO DO TERREIRO
+        function drawCardBack(x, y, countLabel) {
+            ctx.save();
+            ctx.fillStyle = '#1f2937';
+            ctx.fillRect(x, y, cardW, cardH);
+
+            ctx.strokeStyle = '#d4af37';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(x, y, cardW, cardH);
+
+            // Desenhar Imagem da Logo no centro do verso
+            if (logoImg.complete && logoImg.naturalWidth > 0) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(x + cardW / 2, y + cardH / 2 - (countLabel !== null ? 4 : 0), 14, 0, Math.PI * 2);
+                ctx.clip();
+                ctx.drawImage(logoImg, x + cardW / 2 - 14, y + cardH / 2 - 14 - (countLabel !== null ? 4 : 0), 28, 28);
+                ctx.restore();
+                
+                ctx.strokeStyle = '#d4af37';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(x + cardW / 2, y + cardH / 2 - (countLabel !== null ? 4 : 0), 14, 0, Math.PI * 2);
+                ctx.stroke();
+            } else {
+                ctx.fillStyle = '#d4af37';
+                ctx.font = '12px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('🎴', x + cardW / 2, y + cardH / 2 + 4);
+            }
+
+            if (countLabel !== null) {
+                ctx.fillStyle = '#10b981';
+                ctx.font = 'bold 9px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`Monte (${countLabel})`, x + cardW / 2, y + cardH - 4);
+            }
+            ctx.restore();
+        }
     </script>
 </body>
 </html>
